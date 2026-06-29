@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 
+interface Shot {
+  time: string;
+  label: string;
+  description: string;
+  image_url: string;
+  caption: string;
+}
+
 interface Reel {
   id: number;
   url: string;
   title: string;
   image: string | null;
   scenario: string | null;
+  shots: Shot[] | null;
   voiceover: string | null;
   music: string | null;
   post_description: string | null;
@@ -66,7 +75,7 @@ export default function Home() {
         </p>
       </header>
 
-      <main className="w-full max-w-2xl">
+      <main className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">
             Historia rolek
@@ -122,9 +131,32 @@ export default function Home() {
 
                 {expandedId === reel.id && (
                   <div className="px-4 pb-4 border-t border-[var(--card-border)]">
-                    {reel.scenario && (
-                      <Section title="Scenariusz" content={reel.scenario} />
+                    {reel.shots && reel.shots.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-[var(--accent)] mb-3">Ujęcia</h4>
+                        <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1">
+                          {reel.shots.map((shot, i) => (
+                            <div key={i} className="flex-shrink-0 w-32">
+                              <div className="relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "9/16" }}>
+                                <img
+                                  src={shot.image_url}
+                                  alt={shot.caption}
+                                  className="w-full h-full object-cover"
+                                />
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-white text-[10px] font-bold leading-tight">{shot.caption}</p>
+                                </div>
+                                <div className="absolute top-1 left-1 bg-black/60 rounded px-1.5 py-0.5">
+                                  <span className="text-white text-[9px] font-mono">{shot.time}</span>
+                                </div>
+                              </div>
+                              <p className="text-[10px] text-[var(--muted)] mt-1.5 leading-tight line-clamp-2">{shot.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
+
                     {reel.voiceover && (
                       <Section title="Tekst lektora" content={reel.voiceover} />
                     )}
@@ -133,6 +165,9 @@ export default function Home() {
                     )}
                     {reel.post_description && (
                       <Section title="Opis posta" content={reel.post_description} />
+                    )}
+                    {reel.scenario && (
+                      <Section title="Pełny scenariusz" content={reel.scenario} />
                     )}
 
                     <div className="flex gap-3 mt-4">

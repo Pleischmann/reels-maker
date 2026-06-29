@@ -18,15 +18,15 @@ export async function POST(req: NextRequest) {
     const sql = getDb();
     const body = await req.json();
 
-    const { url, title, image, scenario, voiceover, music, post_description } = body;
+    const { url, title, image, scenario, shots, voiceover, music, post_description } = body;
 
     if (!url || !title) {
       return NextResponse.json({ error: "url i title są wymagane" }, { status: 400 });
     }
 
     const result = await sql`
-      INSERT INTO reels (url, title, image, scenario, voiceover, music, post_description)
-      VALUES (${url}, ${title}, ${image || null}, ${scenario || null}, ${voiceover || null}, ${music || null}, ${post_description || null})
+      INSERT INTO reels (url, title, image, scenario, shots, voiceover, music, post_description)
+      VALUES (${url}, ${title}, ${image || null}, ${scenario || null}, ${shots ? JSON.stringify(shots) : "[]"}, ${voiceover || null}, ${music || null}, ${post_description || null})
       RETURNING *
     `;
 
