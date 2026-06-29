@@ -136,7 +136,7 @@ export default function Home() {
                         <h4 className="text-sm font-semibold text-[var(--accent)] mb-3">Ujęcia</h4>
                         <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1">
                           {reel.shots.map((shot, i) => (
-                            <div key={i} className="flex-shrink-0 w-32">
+                            <div key={i} className="flex-shrink-0 w-[168px]">
                               <div className="relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "9/16" }}>
                                 <img
                                   src={shot.image_url}
@@ -150,7 +150,7 @@ export default function Home() {
                                   <span className="text-white text-[9px] font-mono">{shot.time}</span>
                                 </div>
                               </div>
-                              <p className="text-[10px] text-[var(--muted)] mt-1.5 leading-tight line-clamp-2">{shot.description}</p>
+                              <p className="text-[10px] text-[var(--muted)] mt-1.5 leading-tight">{shot.description}</p>
                             </div>
                           ))}
                         </div>
