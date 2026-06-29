@@ -143,8 +143,8 @@ export default function Home() {
                                   alt={shot.caption}
                                   className="w-full h-full object-cover"
                                 />
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                  <p className="text-white text-[10px] font-bold leading-tight">{shot.caption}</p>
+                                <div className="absolute bottom-[20%] left-0 right-0 px-2">
+                                  <p className="text-white text-[13px] font-bold leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{shot.caption}</p>
                                 </div>
                                 <div className="absolute top-1 left-1 bg-black/60 rounded px-1.5 py-0.5">
                                   <span className="text-white text-[9px] font-mono">{shot.time}</span>
