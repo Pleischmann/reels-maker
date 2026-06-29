@@ -1,54 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-interface ArticleData {
-  title: string;
-  description: string;
-  image: string;
+interface Reel {
+  id: number;
   url: string;
+  title: string;
+  image: string | null;
+  scenario: string | null;
+  voiceover: string | null;
+  music: string | null;
+  post_description: string | null;
+  created_at: string;
 }
 
 export default function Home() {
-  const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [article, setArticle] = useState<ArticleData | null>(null);
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setArticle(null);
-    setCopied(false);
+  useEffect(() => {
+    fetchReels();
+  }, []);
 
-    if (!url.includes("magazif.com")) {
-      setError("Wklej link do artykułu z magazif.com");
-      return;
-    }
-
-    setLoading(true);
+  async function fetchReels() {
     try {
-      const res = await fetch("/api/fetch-article", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      if (!res.ok) throw new Error("Nie udało się pobrać artykułu");
-      const data = await res.json();
-      setArticle(data);
-    } catch {
-      setError("Nie udało się pobrać artykułu. Sprawdź link i spróbuj ponownie.");
+      const res = await fetch("/api/reels");
+      if (res.ok) {
+        setReels(await res.json());
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  function handleCopy() {
-    if (!article) return;
-    navigator.clipboard.writeText(`/reels ${article.url}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function handleDelete(id: number) {
+    if (!confirm("Na pewno usunąć tę rolkę?")) return;
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/reels?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setReels(reels.filter((r) => r.id !== id));
+      }
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  function toggleExpand(id: number) {
+    setExpandedId(expandedId === id ? null : id);
   }
 
   return (
@@ -61,78 +62,134 @@ export default function Home() {
           Reels <span className="text-[var(--accent)]">Maker</span>
         </h1>
         <p className="text-[var(--muted)] max-w-md mx-auto text-lg">
-          Wklej link do artykułu MAGAZIF — wygeneruj pakiet produkcyjny do rolki na Instagram i Facebook.
+          Pakiety produkcyjne do rolek Instagram i Facebook z artykułów MAGAZIF.
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-xl mb-8">
-        <div className="flex gap-3">
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://magazif.com/..."
-            required
-            className="flex-1 px-4 py-3 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-3 rounded-xl bg-[var(--accent)] text-black font-semibold hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            {loading ? "Pobieram..." : "Pobierz"}
-          </button>
+      <main className="w-full max-w-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold">
+            Historia rolek
+            <span className="ml-2 text-sm text-[var(--muted)] font-normal">
+              ({reels.length})
+            </span>
+          </h2>
         </div>
-        {error && (
-          <p className="mt-3 text-red-400 text-sm">{error}</p>
-        )}
-      </form>
 
-      {article && (
-        <div className="w-full max-w-xl rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
-          {article.image && (
-            <div className="relative w-full h-56 sm:h-64 overflow-hidden">
-              <img
-                src={article.image}
-                alt={article.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
-            {article.description && (
-              <p className="text-[var(--muted)] text-sm mb-4 line-clamp-3">
-                {article.description}
-              </p>
-            )}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleCopy}
-                className="flex-1 px-4 py-3 rounded-xl bg-[var(--accent)] text-black font-semibold hover:bg-[var(--accent-hover)] transition-colors text-center"
-              >
-                {copied ? "Skopiowano!" : "Kopiuj komendę /reels"}
-              </button>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-3 rounded-xl border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-colors text-center"
-              >
-                Zobacz artykuł
-              </a>
-            </div>
-            <div className="mt-4 p-3 rounded-lg bg-[var(--background)] border border-[var(--card-border)]">
-              <p className="text-xs text-[var(--muted)] mb-1">Komenda do Claude Code:</p>
-              <code className="text-sm text-[var(--accent)] break-all">/reels {article.url}</code>
-            </div>
+        {loading ? (
+          <div className="text-center text-[var(--muted)] py-16">Ładowanie...</div>
+        ) : reels.length === 0 ? (
+          <div className="text-center py-16 rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+            <p className="text-[var(--muted)] text-lg mb-2">Brak rolek</p>
+            <p className="text-[var(--muted)] text-sm">
+              Użyj komendy <code className="text-[var(--accent)]">/reels URL</code> w Claude Code, aby wygenerować pierwszą rolkę.
+            </p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col gap-4">
+            {reels.map((reel) => (
+              <div
+                key={reel.id}
+                className="rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden transition-all"
+              >
+                <button
+                  onClick={() => toggleExpand(reel.id)}
+                  className="w-full flex items-center gap-4 p-4 text-left hover:bg-[#1a1a1a] transition-colors"
+                >
+                  {reel.image && (
+                    <img
+                      src={reel.image}
+                      alt={reel.title}
+                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{reel.title}</h3>
+                    <p className="text-xs text-[var(--muted)] mt-1">
+                      {new Date(reel.created_at).toLocaleDateString("pl-PL", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <span className="text-[var(--muted)] text-xl flex-shrink-0">
+                    {expandedId === reel.id ? "−" : "+"}
+                  </span>
+                </button>
+
+                {expandedId === reel.id && (
+                  <div className="px-4 pb-4 border-t border-[var(--card-border)]">
+                    {reel.scenario && (
+                      <Section title="Scenariusz" content={reel.scenario} />
+                    )}
+                    {reel.voiceover && (
+                      <Section title="Tekst lektora" content={reel.voiceover} />
+                    )}
+                    {reel.music && (
+                      <Section title="Muzyka" content={reel.music} />
+                    )}
+                    {reel.post_description && (
+                      <Section title="Opis posta" content={reel.post_description} />
+                    )}
+
+                    <div className="flex gap-3 mt-4">
+                      <a
+                        href={reel.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-xl border border-[var(--card-border)] text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-colors"
+                      >
+                        Zobacz artykuł
+                      </a>
+                      <button
+                        onClick={() => handleDelete(reel.id)}
+                        disabled={deleting === reel.id}
+                        className="px-4 py-2 rounded-xl border border-red-900 text-sm text-red-400 hover:bg-red-950 transition-colors disabled:opacity-50"
+                      >
+                        {deleting === reel.id ? "Usuwanie..." : "Usuń"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
 
       <footer className="mt-auto pt-12 pb-6 text-center text-xs text-[var(--muted)]">
         Reels Maker by MAGAZIF — pakiety produkcyjne do rolek IG/FB
       </footer>
+    </div>
+  );
+}
+
+function Section({ title, content }: { title: string; content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-1">
+        <h4 className="text-sm font-semibold text-[var(--accent)]">{title}</h4>
+        <button
+          onClick={handleCopy}
+          className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+        >
+          {copied ? "Skopiowano!" : "Kopiuj"}
+        </button>
+      </div>
+      <div className="text-sm text-[var(--foreground)] whitespace-pre-wrap bg-[var(--background)] rounded-lg p-3 border border-[var(--card-border)]">
+        {content}
+      </div>
     </div>
   );
 }
