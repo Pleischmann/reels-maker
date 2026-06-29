@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "reels-maker",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd '/Users/pleischmann/Desktop/= Pleischmann/AI nie gryzie/Code/reels-maker' && npm run dev"],
+      "port": 3001
+    }
+  ]
+}

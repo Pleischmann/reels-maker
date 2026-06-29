@@ -1,65 +1,138 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+interface ArticleData {
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+}
 
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [article, setArticle] = useState<ArticleData | null>(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setArticle(null);
+    setCopied(false);
+
+    if (!url.includes("magazif.com")) {
+      setError("Wklej link do artykułu z magazif.com");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/fetch-article", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) throw new Error("Nie udało się pobrać artykułu");
+      const data = await res.json();
+      setArticle(data);
+    } catch {
+      setError("Nie udało się pobrać artykułu. Sprawdź link i spróbuj ponownie.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!article) return;
+    navigator.clipboard.writeText(`/reels ${article.url}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col flex-1 items-center px-4 py-12 sm:py-20">
+      <header className="text-center mb-12">
+        <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-[var(--card-border)] text-xs tracking-widest uppercase text-[var(--muted)]">
+          MAGAZIF
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+          Reels <span className="text-[var(--accent)]">Maker</span>
+        </h1>
+        <p className="text-[var(--muted)] max-w-md mx-auto text-lg">
+          Wklej link do artykułu MAGAZIF — wygeneruj pakiet produkcyjny do rolki na Instagram i Facebook.
+        </p>
+      </header>
+
+      <form onSubmit={handleSubmit} className="w-full max-w-xl mb-8">
+        <div className="flex gap-3">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://magazif.com/..."
+            required
+            className="flex-1 px-4 py-3 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-3 rounded-xl bg-[var(--accent)] text-black font-semibold hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {loading ? "Pobieram..." : "Pobierz"}
+          </button>
         </div>
-      </main>
+        {error && (
+          <p className="mt-3 text-red-400 text-sm">{error}</p>
+        )}
+      </form>
+
+      {article && (
+        <div className="w-full max-w-xl rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden">
+          {article.image && (
+            <div className="relative w-full h-56 sm:h-64 overflow-hidden">
+              <img
+                src={article.image}
+                alt={article.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-2">{article.title}</h2>
+            {article.description && (
+              <p className="text-[var(--muted)] text-sm mb-4 line-clamp-3">
+                {article.description}
+              </p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleCopy}
+                className="flex-1 px-4 py-3 rounded-xl bg-[var(--accent)] text-black font-semibold hover:bg-[var(--accent-hover)] transition-colors text-center"
+              >
+                {copied ? "Skopiowano!" : "Kopiuj komendę /reels"}
+              </button>
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-3 rounded-xl border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-colors text-center"
+              >
+                Zobacz artykuł
+              </a>
+            </div>
+            <div className="mt-4 p-3 rounded-lg bg-[var(--background)] border border-[var(--card-border)]">
+              <p className="text-xs text-[var(--muted)] mb-1">Komenda do Claude Code:</p>
+              <code className="text-sm text-[var(--accent)] break-all">/reels {article.url}</code>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="mt-auto pt-12 pb-6 text-center text-xs text-[var(--muted)]">
+        Reels Maker by MAGAZIF — pakiety produkcyjne do rolek IG/FB
+      </footer>
     </div>
   );
 }
